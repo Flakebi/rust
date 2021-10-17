@@ -147,6 +147,7 @@ macro_rules! types {
 }
 
 mod aarch64;
+mod amdgpu;
 mod arm;
 mod bpf;
 mod hexagon;
@@ -160,6 +161,7 @@ mod wasm;
 mod x86;
 
 pub use aarch64::{AArch64InlineAsmReg, AArch64InlineAsmRegClass};
+pub use amdgpu::{AmdgpuInlineAsmReg, AmdgpuInlineAsmRegClass};
 pub use arm::{ArmInlineAsmReg, ArmInlineAsmRegClass};
 pub use bpf::{BpfInlineAsmReg, BpfInlineAsmRegClass};
 pub use hexagon::{HexagonInlineAsmReg, HexagonInlineAsmRegClass};
@@ -190,6 +192,7 @@ pub enum InlineAsmArch {
     SpirV,
     Wasm32,
     Bpf,
+    Amdgpu,
 }
 
 impl FromStr for InlineAsmArch {
@@ -213,6 +216,7 @@ impl FromStr for InlineAsmArch {
             "spirv" => Ok(Self::SpirV),
             "wasm32" => Ok(Self::Wasm32),
             "bpf" => Ok(Self::Bpf),
+            "amdgpu" => Ok(Self::Amdgpu),
             _ => Err(()),
         }
     }
@@ -243,6 +247,7 @@ pub enum InlineAsmReg {
     SpirV(SpirVInlineAsmReg),
     Wasm(WasmInlineAsmReg),
     Bpf(BpfInlineAsmReg),
+    Amdgpu(AmdgpuInlineAsmReg),
     // Placeholder for invalid register constraints for the current target
     Err,
 }
@@ -259,6 +264,7 @@ impl InlineAsmReg {
             Self::Mips(r) => r.name(),
             Self::S390x(r) => r.name(),
             Self::Bpf(r) => r.name(),
+            Self::Amdgpu(r) => r.name(),
             Self::Err => "<reg>",
         }
     }
@@ -274,6 +280,7 @@ impl InlineAsmReg {
             Self::Mips(r) => InlineAsmRegClass::Mips(r.reg_class()),
             Self::S390x(r) => InlineAsmRegClass::S390x(r.reg_class()),
             Self::Bpf(r) => InlineAsmRegClass::Bpf(r.reg_class()),
+            Self::Amdgpu(r) => InlineAsmRegClass::Amdgpu(r.reg_class()),
             Self::Err => InlineAsmRegClass::Err,
         }
     }
@@ -324,6 +331,9 @@ impl InlineAsmReg {
             InlineAsmArch::Bpf => {
                 Self::Bpf(BpfInlineAsmReg::parse(arch, has_feature, target, &name)?)
             }
+            InlineAsmArch::Amdgpu => {
+                Self::Amdgpu(AmdgpuInlineAsmReg::parse(arch, has_feature, target, &name)?)
+            }
         })
     }
 
@@ -345,6 +355,7 @@ impl InlineAsmReg {
             Self::Mips(r) => r.emit(out, arch, modifier),
             Self::S390x(r) => r.emit(out, arch, modifier),
             Self::Bpf(r) => r.emit(out, arch, modifier),
+            Self::Amdgpu(r) => r.emit(out, arch, modifier),
             Self::Err => unreachable!("Use of InlineAsmReg::Err"),
         }
     }
@@ -360,6 +371,7 @@ impl InlineAsmReg {
             Self::Mips(_) => cb(self),
             Self::S390x(_) => cb(self),
             Self::Bpf(r) => r.overlapping_regs(|r| cb(Self::Bpf(r))),
+            Self::Amdgpu(_) => cb(self),
             Self::Err => unreachable!("Use of InlineAsmReg::Err"),
         }
     }
@@ -390,6 +402,7 @@ pub enum InlineAsmRegClass {
     SpirV(SpirVInlineAsmRegClass),
     Wasm(WasmInlineAsmRegClass),
     Bpf(BpfInlineAsmRegClass),
+    Amdgpu(AmdgpuInlineAsmRegClass),
     // Placeholder for invalid register constraints for the current target
     Err,
 }
@@ -409,6 +422,7 @@ impl InlineAsmRegClass {
             Self::SpirV(r) => r.name(),
             Self::Wasm(r) => r.name(),
             Self::Bpf(r) => r.name(),
+            Self::Amdgpu(r) => r.name(),
             Self::Err => rustc_span::symbol::sym::reg,
         }
     }
@@ -430,6 +444,7 @@ impl InlineAsmRegClass {
             Self::SpirV(r) => r.suggest_class(arch, ty).map(InlineAsmRegClass::SpirV),
             Self::Wasm(r) => r.suggest_class(arch, ty).map(InlineAsmRegClass::Wasm),
             Self::Bpf(r) => r.suggest_class(arch, ty).map(InlineAsmRegClass::Bpf),
+            Self::Amdgpu(r) => r.suggest_class(arch, ty).map(InlineAsmRegClass::Amdgpu),
             Self::Err => unreachable!("Use of InlineAsmRegClass::Err"),
         }
     }
@@ -458,6 +473,7 @@ impl InlineAsmRegClass {
             Self::SpirV(r) => r.suggest_modifier(arch, ty),
             Self::Wasm(r) => r.suggest_modifier(arch, ty),
             Self::Bpf(r) => r.suggest_modifier(arch, ty),
+            Self::Amdgpu(r) => r.suggest_modifier(arch, ty),
             Self::Err => unreachable!("Use of InlineAsmRegClass::Err"),
         }
     }
@@ -482,6 +498,7 @@ impl InlineAsmRegClass {
             Self::SpirV(r) => r.default_modifier(arch),
             Self::Wasm(r) => r.default_modifier(arch),
             Self::Bpf(r) => r.default_modifier(arch),
+            Self::Amdgpu(r) => r.default_modifier(arch),
             Self::Err => unreachable!("Use of InlineAsmRegClass::Err"),
         }
     }
@@ -505,6 +522,7 @@ impl InlineAsmRegClass {
             Self::SpirV(r) => r.supported_types(arch),
             Self::Wasm(r) => r.supported_types(arch),
             Self::Bpf(r) => r.supported_types(arch),
+            Self::Amdgpu(r) => r.supported_types(arch),
             Self::Err => unreachable!("Use of InlineAsmRegClass::Err"),
         }
     }
@@ -531,6 +549,7 @@ impl InlineAsmRegClass {
             InlineAsmArch::SpirV => Self::SpirV(SpirVInlineAsmRegClass::parse(arch, name)?),
             InlineAsmArch::Wasm32 => Self::Wasm(WasmInlineAsmRegClass::parse(arch, name)?),
             InlineAsmArch::Bpf => Self::Bpf(BpfInlineAsmRegClass::parse(arch, name)?),
+            InlineAsmArch::Amdgpu => Self::Amdgpu(AmdgpuInlineAsmRegClass::parse(arch, name)?),
         })
     }
 
@@ -550,6 +569,7 @@ impl InlineAsmRegClass {
             Self::SpirV(r) => r.valid_modifiers(arch),
             Self::Wasm(r) => r.valid_modifiers(arch),
             Self::Bpf(r) => r.valid_modifiers(arch),
+            Self::Amdgpu(r) => r.valid_modifiers(arch),
             Self::Err => unreachable!("Use of InlineAsmRegClass::Err"),
         }
     }
@@ -733,6 +753,11 @@ pub fn allocatable_registers(
         InlineAsmArch::Bpf => {
             let mut map = bpf::regclass_map();
             bpf::fill_reg_map(arch, has_feature, target, &mut map);
+            map
+        }
+        InlineAsmArch::Amdgpu => {
+            let mut map = amdgpu::regclass_map();
+            amdgpu::fill_reg_map(arch, has_feature, target, &mut map);
             map
         }
     }

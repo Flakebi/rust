@@ -318,6 +318,7 @@ impl AsmBuilderMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                 InlineAsmArch::SpirV => {}
                 InlineAsmArch::Wasm32 => {}
                 InlineAsmArch::Bpf => {}
+                InlineAsmArch::Amdgpu => {}
             }
         }
         if !options.contains(InlineAsmOptions::NOMEM) {
@@ -597,6 +598,10 @@ fn reg_to_llvm(reg: InlineAsmRegOrRegClass, layout: Option<&TyAndLayout<'tcx>>) 
             InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::preg) => {
                 unreachable!("clobber-only")
             }
+            InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::reg) => "r",
+            InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::sgpr) => "s",
+            InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::vgpr) => "v",
+            InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::agpr) => "a",
             InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg) => "r",
             InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg_thumb) => "l",
             InlineAsmRegClass::Arm(ArmInlineAsmRegClass::sreg)
@@ -664,6 +669,10 @@ fn modifier_to_llvm(
         InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::preg) => {
             unreachable!("clobber-only")
         }
+        InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::reg)
+        | InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::sgpr)
+        | InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::vgpr)
+        | InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::agpr) => None,
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg)
         | InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg_thumb) => None,
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::sreg)
@@ -738,6 +747,10 @@ fn dummy_output_type(cx: &CodegenCx<'ll, 'tcx>, reg: InlineAsmRegClass) -> &'ll 
         InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::preg) => {
             unreachable!("clobber-only")
         }
+        InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::reg)
+        | InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::sgpr)
+        | InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::vgpr)
+        | InlineAsmRegClass::Amdgpu(AmdgpuInlineAsmRegClass::agpr) => cx.type_i32(),
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg)
         | InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg_thumb) => cx.type_i32(),
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::sreg)

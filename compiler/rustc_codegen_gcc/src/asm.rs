@@ -560,6 +560,7 @@ fn reg_to_gcc(reg: InlineAsmRegOrRegClass) -> ConstraintOrRegister {
             InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::reg) => unimplemented!(),
             InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::vreg) => unimplemented!(),
             InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::vreg_low16) => unimplemented!(),
+            InlineAsmRegClass::Amdgpu(_) => unimplemented!(),
             InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg) => unimplemented!(),
             InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg_thumb) => unimplemented!(),
             InlineAsmRegClass::Arm(ArmInlineAsmRegClass::sreg)
@@ -620,6 +621,7 @@ fn dummy_output_type<'gcc, 'tcx>(cx: &CodegenCx<'gcc, 'tcx>, reg: InlineAsmRegCl
         | InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::vreg_low16) => {
             unimplemented!()
         }
+        InlineAsmRegClass::Amdgpu(_) => unimplemented!(),
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg)
         | InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg_thumb) => cx.type_i32(),
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::sreg)
@@ -728,6 +730,7 @@ fn modifier_to_gcc(arch: InlineAsmArch, reg: InlineAsmRegClass, modifier: Option
         | InlineAsmRegClass::AArch64(AArch64InlineAsmRegClass::vreg_low16) => {
             unimplemented!()
         }
+        InlineAsmRegClass::Amdgpu(_) => unimplemented!(),
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg)
         | InlineAsmRegClass::Arm(ArmInlineAsmRegClass::reg_thumb) => unimplemented!(),
         InlineAsmRegClass::Arm(ArmInlineAsmRegClass::sreg)
