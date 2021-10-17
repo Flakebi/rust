@@ -879,6 +879,7 @@ pub mod consts {
     /// - x86_64
     /// - arm
     /// - aarch64
+    /// - amdgpu
     /// - m68k
     /// - mips
     /// - mips64

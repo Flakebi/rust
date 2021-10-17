@@ -197,6 +197,12 @@ void LLVMRustAddLastExtensionPasses(
 #define SUBTARGET_AARCH64
 #endif
 
+#ifdef LLVM_COMPONENT_AMDGPU
+#define SUBTARGET_AMDGPU SUBTARGET(AMDGPU)
+#else
+#define SUBTARGET_AMDGPU
+#endif
+
 #ifdef LLVM_COMPONENT_AVR
 #define SUBTARGET_AVR SUBTARGET(AVR)
 #else
@@ -255,6 +261,7 @@ void LLVMRustAddLastExtensionPasses(
   SUBTARGET_X86                                                                \
   SUBTARGET_ARM                                                                \
   SUBTARGET_AARCH64                                                            \
+  SUBTARGET_AMDGPU                                                             \
   SUBTARGET_AVR                                                                \
   SUBTARGET_M68K                                                               \
   SUBTARGET_MIPS                                                               \

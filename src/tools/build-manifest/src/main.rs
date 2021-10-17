@@ -64,6 +64,7 @@ static TARGETS: &[&str] = &[
     "aarch64-unknown-none",
     "aarch64-unknown-none-softfloat",
     "aarch64-unknown-redox",
+    "amdgcn-amd-amdhsa",
     "arm-linux-androideabi",
     "arm-unknown-linux-gnueabi",
     "arm-unknown-linux-gnueabihf",

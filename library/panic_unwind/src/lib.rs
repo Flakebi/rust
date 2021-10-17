@@ -61,6 +61,7 @@ cfg_if::cfg_if! {
         // - os=uefi
         // - os=espidf
         // - nvptx64-nvidia-cuda
+        // - arch=amdgpu
         // - arch=avr
         #[path = "dummy.rs"]
         mod real_imp;

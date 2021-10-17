@@ -37,6 +37,7 @@ fn main() {
         // - os=none ("bare metal" targets)
         // - mipsel-sony-psp
         // - nvptx64-nvidia-cuda
+        // - arch=amdgpu
         // - arch=avr
         // - tvos (aarch64-apple-tvos, x86_64-apple-tvos)
         // - uefi (x86_64-unknown-uefi, i686-unknown-uefi)

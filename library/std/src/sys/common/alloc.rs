@@ -6,6 +6,7 @@ use crate::ptr;
 // add fast paths for low alignment values.
 #[cfg(all(any(
     target_arch = "x86",
+    target_arch = "amdgpu",
     target_arch = "arm",
     target_arch = "mips",
     target_arch = "powerpc",

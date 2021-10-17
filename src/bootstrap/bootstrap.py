@@ -272,6 +272,7 @@ def default_build_triple(verbose):
         'BePC': 'i686',
         'aarch64': 'aarch64',
         'amd64': 'x86_64',
+        'amdgpu': 'amdgpu',
         'arm64': 'aarch64',
         'i386': 'i686',
         'i486': 'i686',

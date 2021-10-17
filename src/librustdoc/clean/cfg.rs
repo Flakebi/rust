@@ -489,6 +489,7 @@ impl<'a> fmt::Display for Display<'a> {
                     },
                     (sym::target_arch, Some(arch)) => match &*arch.as_str() {
                         "aarch64" => "AArch64",
+                        "amdgpu" => "AMDGPU",
                         "arm" => "ARM",
                         "asmjs" => "JavaScript",
                         "m68k" => "M68k",

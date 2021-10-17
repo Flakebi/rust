@@ -52,6 +52,7 @@ use rustc_macros::HashStable_Generic;
 pub mod abi;
 pub mod crt_objects;
 
+mod amdgpu_base;
 mod android_base;
 mod apple_base;
 mod apple_sdk_base;
@@ -954,6 +955,8 @@ supported_targets! {
     ("armv6k-nintendo-3ds", armv6k_nintendo_3ds),
 
     ("armv7-unknown-linux-uclibceabihf", armv7_unknown_linux_uclibceabihf),
+
+    ("amdgcn-amd-amdhsa", amdgcn_amd_amdhsa),
 }
 
 /// Warnings encountered when parsing the target `json`.

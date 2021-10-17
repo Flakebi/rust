@@ -40,6 +40,7 @@ const ARCH_TABLE: &[(&str, &str)] = &[
     ("aarch64", "aarch64"),
     ("aarch64_be", "aarch64"),
     ("amd64", "x86_64"),
+    ("amdgpu", "amdgpu"),
     ("arm", "arm"),
     ("arm64", "aarch64"),
     ("armv4t", "arm"),
