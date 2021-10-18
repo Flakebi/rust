@@ -14,7 +14,8 @@ use rustc_middle::bug;
 use rustc_middle::ty::layout::TyAndLayout;
 use rustc_middle::ty::{self, Ty};
 use rustc_target::abi::call::{CastTarget, FnAbi, Reg};
-use rustc_target::abi::{AddressSpace, Align, Integer, Size};
+use rustc_target::abi::{Align, Integer, Size};
+use rustc_target::spec::AddrSpaceIdx;
 
 use std::fmt;
 use std::ptr;
@@ -189,17 +190,8 @@ impl BaseTypeMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         unsafe { llvm::LLVMRustGetTypeKind(ty).to_generic() }
     }
 
-    fn type_ptr_to(&self, ty: &'ll Type) -> &'ll Type {
-        assert_ne!(
-            self.type_kind(ty),
-            TypeKind::Function,
-            "don't call ptr_to on function types, use ptr_to_llvm_type on FnAbi instead or explicitly specify an address space if it makes sense"
-        );
-        ty.ptr_to(AddressSpace::DATA)
-    }
-
-    fn type_ptr_to_ext(&self, ty: &'ll Type, address_space: AddressSpace) -> &'ll Type {
-        ty.ptr_to(address_space)
+    fn type_as_ptr_to(&self, ty: &'ll Type, addr_space: AddrSpaceIdx) -> &'ll Type {
+        ty.ptr_to(addr_space)
     }
 
     fn element_type(&self, ty: &'ll Type) -> &'ll Type {
@@ -230,6 +222,14 @@ impl BaseTypeMethods<'tcx> for CodegenCx<'ll, 'tcx> {
 
     fn val_ty(&self, v: &'ll Value) -> &'ll Type {
         common::val_ty(v)
+    }
+
+    fn type_addr_space(&self, ty: &'ll Type) -> Option<AddrSpaceIdx> {
+        if self.type_kind(ty) == TypeKind::Pointer {
+            Some(ty.address_space())
+        } else {
+            None
+        }
     }
 }
 
@@ -282,8 +282,8 @@ impl LayoutTypeMethods<'tcx> for CodegenCx<'ll, 'tcx> {
     fn fn_decl_backend_type(&self, fn_abi: &FnAbi<'tcx, Ty<'tcx>>) -> &'ll Type {
         fn_abi.llvm_type(self)
     }
-    fn fn_ptr_backend_type(&self, fn_abi: &FnAbi<'tcx, Ty<'tcx>>) -> &'ll Type {
-        fn_abi.ptr_to_llvm_type(self)
+    fn fn_ptr_backend_type(&self, ty: &FnAbi<'tcx, Ty<'tcx>>) -> &'ll Type {
+        self.type_as_ptr_to(ty.llvm_type(self), self.inst_addr_space())
     }
     fn reg_backend_type(&self, ty: &Reg) -> &'ll Type {
         ty.llvm_type(self)

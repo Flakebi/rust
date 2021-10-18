@@ -991,6 +991,7 @@ extern "C" {
 
     pub fn LLVMGetElementType(Ty: &Type) -> &Type;
     pub fn LLVMGetVectorSize(VectorTy: &Type) -> c_uint;
+    pub fn LLVMGetPointerAddressSpace(Ty: &Type) -> c_uint;
 
     // Operations on other types
     pub fn LLVMVoidTypeInContext(C: &Context) -> &Type;
@@ -1057,6 +1058,7 @@ extern "C" {
     pub fn LLVMConstIntToPtr(ConstantVal: &'a Value, ToType: &'a Type) -> &'a Value;
     pub fn LLVMConstBitCast(ConstantVal: &'a Value, ToType: &'a Type) -> &'a Value;
     pub fn LLVMConstPointerCast(ConstantVal: &'a Value, ToType: &'a Type) -> &'a Value;
+    pub fn LLVMConstAddrSpaceCast(ConstantVal: &'a Value, ToType: &'a Type) -> &'a Value;
     pub fn LLVMConstExtractValue(
         AggConstant: &Value,
         IdxList: *const c_uint,
@@ -1084,8 +1086,10 @@ extern "C" {
         Name: *const c_char,
         NameLen: size_t,
         T: &'a Type,
+        AS: c_uint,
     ) -> &'a Value;
-    pub fn LLVMRustInsertPrivateGlobal(M: &'a Module, T: &'a Type) -> &'a Value;
+    pub fn LLVMRustInsertPrivateGlobal(M: &'a Module, T: &'a Type,
+                                       AS: c_uint) -> &'a Value;
     pub fn LLVMGetFirstGlobal(M: &Module) -> Option<&Value>;
     pub fn LLVMGetNextGlobal(GlobalVar: &Value) -> Option<&Value>;
     pub fn LLVMDeleteGlobal(GlobalVar: &Value);
@@ -1529,6 +1533,12 @@ extern "C" {
         Name: *const c_char,
     ) -> &'a Value;
     pub fn LLVMBuildPointerCast(
+        B: &Builder<'a>,
+        Val: &'a Value,
+        DestTy: &'a Type,
+        Name: *const c_char,
+    ) -> &'a Value;
+    pub fn LLVMBuildAddrSpaceCast(
         B: &Builder<'a>,
         Val: &'a Value,
         DestTy: &'a Type,

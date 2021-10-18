@@ -299,6 +299,8 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                 bx.load(ty, addr, self.fn_abi.ret.layout.align.abi)
             }
         };
+        // make sure pointers are flat:
+        let llval = bx.flat_addr_cast(llval);
         bx.ret(llval);
     }
 
@@ -424,9 +426,10 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
             _ => {
                 let msg_str = Symbol::intern(msg.description());
                 let msg = bx.const_str(msg_str);
+                let msg_0 = bx.cx().const_flat_as_cast(msg.0);
                 // It's `pub fn panic(expr: &str)`, with the wide reference being passed
                 // as two arguments, and `#[track_caller]` adds an implicit third argument.
-                (LangItem::Panic, vec![msg.0, msg.1, location])
+                (LangItem::Panic, vec![msg_0, msg.1, location])
             }
         };
 
@@ -508,7 +511,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                     bx,
                     fn_abi,
                     llfn,
-                    &[msg.0, msg.1, location],
+                    &[msg_0, msg.1, location],
                     destination.as_ref().map(|(_, bb)| (ReturnDest::Nothing, *bb)),
                     cleanup,
                 );
@@ -1098,7 +1101,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                     );
                     (scratch.llval, scratch.align, true)
                 } else {
-                    (llval, align, true)
+                    (bx.flat_addr_cast(llval), align, true)
                 }
             }
         };
@@ -1303,7 +1306,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
 
     fn landing_pad_type(&self) -> Bx::Type {
         let cx = self.cx;
-        cx.type_struct(&[cx.type_i8p(), cx.type_i32()], false)
+        cx.type_struct(&[cx.type_flat_i8p(), cx.type_i32()], false)
     }
 
     fn unreachable_block(&mut self) -> Bx::BasicBlock {
