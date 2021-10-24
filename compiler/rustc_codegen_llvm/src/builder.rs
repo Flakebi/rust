@@ -1,4 +1,4 @@
-use crate::common::{Funclet, val_addr_space, val_addr_space_opt};
+use crate::common::{val_addr_space, val_addr_space_opt, Funclet};
 use crate::context::CodegenCx;
 use crate::llvm::{self, BasicBlock, False};
 use crate::llvm::{AtomicOrdering, AtomicRmwBinOp, SynchronizationScope};
@@ -15,6 +15,7 @@ use rustc_codegen_ssa::traits::*;
 use rustc_codegen_ssa::MemFlags;
 use rustc_data_structures::small_c_str::SmallCStr;
 use rustc_hir::def_id::DefId;
+use rustc_middle::bug;
 use rustc_middle::ty::layout::{
     FnAbiError, FnAbiOfHelpers, FnAbiRequest, LayoutError, LayoutOfHelpers, TyAndLayout,
 };
@@ -617,7 +618,7 @@ impl BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
     ) -> &'ll Value {
         debug!("Store {:?} -> {:?} ({:?})", val, ptr, flags);
         let dest_ptr_ty = self.cx.val_ty(ptr);
-        let dest_ty = self.cx.element_type(dest_ptr_ty);
+        let dest_ty = self.cx.element_type_forced(dest_ptr_ty);
         if let Some(dest_as) = self.cx.type_addr_space(dest_ty) {
             val = self.addrspace_cast(val, dest_as);
         }
@@ -822,10 +823,12 @@ impl BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
     }
 
     /// address space casts, then bitcasts to dest_ty without changing address spaces.
-    fn as_ptr_cast(&mut self, val: &'ll Value,
-                   addr_space: AddrSpaceIdx,
-                   dest_ty: &'ll Type) -> &'ll Value
-    {
+    fn as_ptr_cast(
+        &mut self,
+        val: &'ll Value,
+        addr_space: AddrSpaceIdx,
+        dest_ty: &'ll Type,
+    ) -> &'ll Value {
         let val = self.addrspace_cast(val, addr_space);
         self.pointercast(val, dest_ty.copy_addr_space(addr_space))
     }
@@ -862,12 +865,11 @@ impl BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         let op = llvm::IntPredicate::from_generic(op);
 
         match (val_addr_space_opt(lhs), val_addr_space_opt(rhs)) {
-            (Some(l), Some(r)) if l == r => {},
+            (Some(l), Some(r)) if l == r => {}
             (Some(l), Some(r)) if l != r => {
-                bug!("tried to cmp ptrs of different addr spaces: lhs {:?} rhs {:?}",
-                     lhs, rhs);
-            },
-            _ => {},
+                bug!("tried to cmp ptrs of different addr spaces: lhs {:?} rhs {:?}", lhs, rhs);
+            }
+            _ => {}
         }
 
         unsafe { llvm::LLVMBuildICmp(self.llbuilder, op as c_uint, lhs, rhs, UNNAMED) }
@@ -1359,8 +1361,7 @@ impl Builder<'a, 'll, 'tcx> {
     fn check_store(&mut self, val: &'ll Value, ptr: &'ll Value) -> &'ll Value {
         let dest_ptr_ty = self.cx.val_ty(ptr);
         let stored_ty = self.cx.val_ty(val);
-        let stored_ptr_ty = self.cx.type_as_ptr_to(stored_ty,
-                                                   dest_ptr_ty.address_space());
+        let stored_ptr_ty = self.cx.type_as_ptr_to(stored_ty, dest_ptr_ty.address_space());
 
         assert_eq!(self.cx.type_kind(dest_ptr_ty), TypeKind::Pointer);
 
@@ -1410,8 +1411,8 @@ impl Builder<'a, 'll, 'tcx> {
                         llfn, expected_ty, i, actual_ty
                     );
                     if expected_ty.is_ptr() && actual_ty.is_ptr() {
-                        let actual_val = self.addrspace_cast(actual_val,
-                                                             expected_ty.address_space());
+                        let actual_val =
+                            self.addrspace_cast(actual_val, expected_ty.address_space());
                         self.pointercast(actual_val, expected_ty)
                     } else {
                         let actual_val = if actual_ty.is_ptr() {

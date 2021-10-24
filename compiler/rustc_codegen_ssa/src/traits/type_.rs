@@ -36,6 +36,8 @@ pub trait BaseTypeMethods<'tcx>: Backend<'tcx> {
 
     fn element_type(&self, ty: Self::Type) -> Self::Type;
 
+    fn element_type_forced(&self, ty: Self::Type) -> Self::Type;
+
     /// Returns the number of elements in `self` if it is a LLVM vector type.
     fn vector_length(&self, ty: Self::Type) -> usize;
 
@@ -55,7 +57,7 @@ pub trait BaseTypeMethods<'tcx>: Backend<'tcx> {
             (Some(addr_space), TypeKind::Pointer) => {
                 let elem = self.element_type(ty);
                 self.type_as_ptr_to(elem, addr_space)
-            },
+            }
             _ => ty,
         }
     }
@@ -137,24 +139,32 @@ pub trait DerivedTypeMethods<'tcx>: BaseTypeMethods<'tcx> + MiscMethods<'tcx> {
     /// largest (+alignment), so that address space is safe to cast to
     /// ints/etc. Also, address space changes require computing a offset
     /// or two, so a straight bitcast is wrong.
-    fn type_check_no_addr_space_change(&self, what: &str,
-                                       src: Self::Value,
-                                       dest_ty: Self::Type) {
+    fn type_check_no_addr_space_change(&self, what: &str, src: Self::Value, dest_ty: Self::Type) {
         let src_ty = self.val_ty(src);
         match (self.type_addr_space(src_ty), self.type_addr_space(dest_ty)) {
             (Some(src_as), Some(dest_as)) if src_as != dest_as => {
-                bug!("Invalid address space cast in `{}` cast:\n\
+                bug!(
+                    "Invalid address space cast in `{}` cast:\n\
                      source addr space `{}`, dest addr space `{}`\n\
-                     source value: {:?}, dest ty: {:?}", what,
-                     src_as, dest_as, src, dest_ty);
-            },
+                     source value: {:?}, dest ty: {:?}",
+                    what,
+                    src_as,
+                    dest_as,
+                    src,
+                    dest_ty
+                );
+            }
             (Some(src_as), None) if src_as != self.flat_addr_space() => {
-                bug!("Invalid address space cast in `{}` cast:\n\
+                bug!(
+                    "Invalid address space cast in `{}` cast:\n\
                      source addr space `{}` is not flat\n\
                      source value: {:?}",
-                     what, src_as, src);
-            },
-            _ => { },
+                    what,
+                    src_as,
+                    src
+                );
+            }
+            _ => {}
         }
     }
     fn type_ptr_to_inst(&self, ty: Self::Type) -> Self::Type {

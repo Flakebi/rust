@@ -72,12 +72,17 @@ pub trait CodegenMethods<'tcx>:
 
         match (self.type_addr_space(src_ty), self.type_addr_space(dest)) {
             (Some(left), Some(right)) if !self.can_cast_addr_space(left, right) => {
-                bug!("Target incompatible address space cast:\n\
+                bug!(
+                    "Target incompatible address space cast:\n\
                       source addr space `{}`, dest addr space `{}`\n\
                       source value: {:?}, dest ty: {:?}",
-                     left, right, val, dest);
-            },
-            _ => { },
+                    left,
+                    right,
+                    val,
+                    dest
+                );
+            }
+            _ => {}
         }
     }
 }

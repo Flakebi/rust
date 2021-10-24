@@ -1088,8 +1088,7 @@ extern "C" {
         T: &'a Type,
         AS: c_uint,
     ) -> &'a Value;
-    pub fn LLVMRustInsertPrivateGlobal(M: &'a Module, T: &'a Type,
-                                       AS: c_uint) -> &'a Value;
+    pub fn LLVMRustInsertPrivateGlobal(M: &'a Module, T: &'a Type, AS: c_uint) -> &'a Value;
     pub fn LLVMGetFirstGlobal(M: &Module) -> Option<&Value>;
     pub fn LLVMGetNextGlobal(GlobalVar: &Value) -> Option<&Value>;
     pub fn LLVMDeleteGlobal(GlobalVar: &Value);

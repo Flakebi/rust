@@ -5,7 +5,7 @@ use rustc_codegen_ssa::traits::{BaseTypeMethods, DerivedTypeMethods};
 use rustc_codegen_ssa::common::TypeKind;
 use rustc_middle::bug;
 use rustc_middle::ty::layout::TyAndLayout;
-use rustc_target::abi::{AddressSpace, Align, Integer, Size};
+use rustc_target::abi::{AddrSpaceIdx, Align, Integer, Size};
 
 use crate::common::TypeReflection;
 use crate::context::CodegenCx;
@@ -135,7 +135,7 @@ impl<'gcc, 'tcx> BaseTypeMethods<'tcx> for CodegenCx<'gcc, 'tcx> {
         ty.make_pointer()
     }
 
-    fn type_ptr_to_ext(&self, ty: Type<'gcc>, _address_space: AddressSpace) -> Type<'gcc> {
+    fn type_ptr_to_ext(&self, ty: Type<'gcc>, _address_space: AddrSpaceIdx) -> Type<'gcc> {
         // TODO(antoyo): use address_space
         ty.make_pointer()
     }

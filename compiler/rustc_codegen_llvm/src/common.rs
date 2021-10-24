@@ -8,6 +8,7 @@ use crate::type_of::LayoutLlvmExt;
 use crate::value::Value;
 
 use rustc_ast::Mutability;
+use rustc_codegen_ssa::common::TypeKind;
 use rustc_codegen_ssa::mir::place::PlaceRef;
 use rustc_codegen_ssa::traits::*;
 use rustc_middle::bug;
@@ -15,7 +16,8 @@ use rustc_middle::mir::interpret::{Allocation, GlobalAlloc, Scalar};
 use rustc_middle::ty::layout::{LayoutOf, TyAndLayout};
 use rustc_middle::ty::ScalarInt;
 use rustc_span::symbol::Symbol;
-use rustc_target::abi::{self, AddressSpace, HasDataLayout, Pointer, Size};
+use rustc_target::abi::{self, HasDataLayout, Pointer, Size};
+use rustc_target::spec::AddrSpaceIdx;
 
 use libc::{c_char, c_uint};
 use tracing::debug;
@@ -120,8 +122,8 @@ impl CodegenCx<'ll, 'tcx> {
                 !null_terminated as Bool,
             );
             let sym = self.generate_local_symbol_name("str");
-            let g = self.define_global(&sym[..], self.val_ty(sc),
-                                       self.const_addr_space())
+            let g = self
+                .define_global(&sym[..], self.val_ty(sc), self.const_addr_space())
                 .unwrap_or_else(|| {
                     bug!("symbol `{}` is already defined", sym);
                 });
@@ -263,7 +265,12 @@ impl ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
                     GlobalAlloc::Memory(alloc) => {
                         let init = const_alloc_to_llvm(self, alloc);
                         let value = match alloc.mutability {
-                            Mutability::Mut => self.static_addr_of_mut(init, alloc.align, None, self.mutable_addr_space()),
+                            Mutability::Mut => self.static_addr_of_mut(
+                                init,
+                                alloc.align,
+                                None,
+                                self.mutable_addr_space(),
+                            ),
                             _ => self.static_addr_of(init, alloc.align, None),
                         };
                         if !self.sess().fewer_names() {
@@ -341,11 +348,7 @@ pub fn val_ty(v: &Value) -> &Type {
 }
 pub fn val_addr_space_opt(v: &Value) -> Option<AddrSpaceIdx> {
     let ty = val_ty(v);
-    if ty.kind() == TypeKind::Pointer {
-        Some(ty.address_space())
-    } else {
-        None
-    }
+    if ty.kind() == TypeKind::Pointer { Some(ty.address_space()) } else { None }
 }
 pub fn val_addr_space(v: &Value) -> AddrSpaceIdx {
     val_addr_space_opt(v).unwrap_or_default()

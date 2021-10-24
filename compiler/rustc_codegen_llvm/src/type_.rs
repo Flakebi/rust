@@ -202,6 +202,10 @@ impl BaseTypeMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         }
     }
 
+    fn element_type_forced(&self, ty: &'ll Type) -> &'ll Type {
+        unsafe { llvm::LLVMGetElementType(ty) }
+    }
+
     fn vector_length(&self, ty: &'ll Type) -> usize {
         unsafe { llvm::LLVMGetVectorSize(ty) as usize }
     }
@@ -225,11 +229,7 @@ impl BaseTypeMethods<'tcx> for CodegenCx<'ll, 'tcx> {
     }
 
     fn type_addr_space(&self, ty: &'ll Type) -> Option<AddrSpaceIdx> {
-        if self.type_kind(ty) == TypeKind::Pointer {
-            Some(ty.address_space())
-        } else {
-            None
-        }
+        if self.type_kind(ty) == TypeKind::Pointer { Some(ty.address_space()) } else { None }
     }
 }
 
@@ -244,11 +244,35 @@ impl Type {
     }
 
     pub fn i8p_llcx(llcx: &llvm::Context) -> &Type {
-        Type::i8_llcx(llcx).ptr_to(AddressSpace::DATA)
+        Type::i8_llcx(llcx).ptr_to(Default::default())
     }
 
-    fn ptr_to(&self, address_space: AddressSpace) -> &Type {
-        unsafe { llvm::LLVMPointerType(self, address_space.0) }
+    pub fn kind(&self) -> TypeKind {
+        unsafe { llvm::LLVMRustGetTypeKind(self).to_generic() }
+    }
+
+    pub fn is_ptr(&self) -> bool {
+        self.kind() == TypeKind::Pointer
+    }
+
+    fn ptr_to(&self, addr_space: AddrSpaceIdx) -> &Type {
+        unsafe { llvm::LLVMPointerType(&self, addr_space.0) }
+    }
+
+    pub fn address_space(&self) -> AddrSpaceIdx {
+        AddrSpaceIdx(unsafe { llvm::LLVMGetPointerAddressSpace(self) })
+    }
+
+    pub fn copy_addr_space(&self, addr_space: AddrSpaceIdx) -> &Type {
+        if !self.is_ptr() {
+            return self;
+        }
+
+        if addr_space != self.address_space() {
+            unsafe { llvm::LLVMGetElementType(self) }.ptr_to(addr_space)
+        } else {
+            self
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::base;
-use crate::common::{CodegenCx, val_addr_space, val_addr_space_opt};
+use crate::common::{val_addr_space, val_addr_space_opt, CodegenCx};
 use crate::debuginfo;
 use crate::llvm::{self, True};
 use crate::type_::Type;
@@ -11,16 +11,14 @@ use rustc_codegen_ssa::traits::*;
 use rustc_hir::def_id::DefId;
 use rustc_middle::middle::codegen_fn_attrs::{CodegenFnAttrFlags, CodegenFnAttrs};
 use rustc_middle::mir::interpret::{
-    read_target_uint, Allocation, ErrorHandled, GlobalAlloc, InitChunk, Pointer,
-    Scalar as InterpScalar,
+    read_target_uint, Allocation, ErrorHandled, InitChunk, Pointer, Scalar as InterpScalar,
 };
 use rustc_middle::mir::mono::MonoItem;
 use rustc_middle::ty::layout::LayoutOf;
 use rustc_middle::ty::{self, Instance, Ty};
 use rustc_middle::{bug, span_bug};
-use rustc_target::abi::{
-    AddressSpace, Align, HasDataLayout, Primitive, Scalar, Size, WrappingRange,
-};
+use rustc_target::abi::{Align, HasDataLayout, Primitive, Scalar, Size, WrappingRange};
+use rustc_target::spec::AddrSpaceIdx;
 use std::ops::Range;
 use tracing::debug;
 
@@ -155,8 +153,7 @@ fn check_and_apply_linkage(
     span_def_id: DefId,
 ) -> &'ll Value {
     let llty = cx.layout_of(ty).llvm_type(cx);
-    let addr_space = attrs.addr_space
-      .unwrap_or(cx.flat_addr_space());
+    let addr_space = attrs.addr_space.unwrap_or(cx.flat_addr_space());
     if let Some(linkage) = attrs.linkage {
         debug!("get_static: sym={} linkage={:?}", sym, linkage);
 
@@ -224,9 +221,7 @@ impl CodegenCx<'ll, 'tcx> {
         if src_ty.is_ptr() && src_ty.address_space() != addr_space {
             let dest_ty = src_ty.copy_addr_space(addr_space);
             self.check_addr_space_cast(val, dest_ty);
-            unsafe {
-                llvm::LLVMConstAddrSpaceCast(val, dest_ty)
-            }
+            unsafe { llvm::LLVMConstAddrSpaceCast(val, dest_ty) }
         } else {
             val
         }
@@ -243,9 +238,11 @@ impl CodegenCx<'ll, 'tcx> {
             let gv = match kind {
                 Some(kind) if !self.tcx.sess.fewer_names() => {
                     let name = self.generate_local_symbol_name(kind);
-                    let gv = self.define_global(&name[..], self.val_ty(cv), addr_space).unwrap_or_else(|| {
-                        bug!("symbol `{}` is already defined", name);
-                    });
+                    let gv = self
+                        .define_global(&name[..], self.val_ty(cv), addr_space)
+                        .unwrap_or_else(|| {
+                            bug!("symbol `{}` is already defined", name);
+                        });
                     llvm::LLVMRustSetLinkage(gv, llvm::Linkage::PrivateLinkage);
                     gv
                 }
@@ -292,8 +289,7 @@ impl CodegenCx<'ll, 'tcx> {
             /*} else {
                 self.const_addr_space()
             }*/;
-            let addr_space = cg_attrs.addr_space
-              .unwrap_or(addr_space);
+            let addr_space = fn_attrs.addr_space.unwrap_or(addr_space);
 
             let g = self.declare_global(sym, llty, addr_space);
 
@@ -383,8 +379,7 @@ impl StaticMethods for CodegenCx<'ll, 'tcx> {
             }
             return gv;
         }
-        let gv = self.static_addr_of_mut(cv, align, kind,
-                                         self.const_addr_space());
+        let gv = self.static_addr_of_mut(cv, align, kind, self.const_addr_space());
         unsafe {
             llvm::LLVMSetGlobalConstant(gv, True);
         }
@@ -434,13 +429,9 @@ impl StaticMethods for CodegenCx<'ll, 'tcx> {
                 let visibility = llvm::LLVMRustGetVisibility(g);
                 let attrs = self.tcx.codegen_fn_attrs(def_id);
 
-                let addr_space = if llvm_mutable {
-                    self.mutable_addr_space()
-                } else {
-                    self.const_addr_space()
-                };
-                let addr_space = attrs.addr_space
-                  .unwrap_or(addr_space);
+                let addr_space =
+                    if llvm_mutable { self.mutable_addr_space() } else { self.const_addr_space() };
+                let addr_space = attrs.addr_space.unwrap_or(addr_space);
 
                 let new_g = llvm::LLVMRustGetOrInsertGlobal(
                     self.llmod,

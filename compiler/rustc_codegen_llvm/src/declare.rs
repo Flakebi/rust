@@ -120,7 +120,7 @@ impl CodegenCx<'ll, 'tcx> {
         &self,
         name: &str,
         ty: &'ll Type,
-        addr_space: AddrSpaceIdx
+        addr_space: AddrSpaceIdx,
     ) -> Option<&'ll Value> {
         if self.get_defined_value(name).is_some() {
             None

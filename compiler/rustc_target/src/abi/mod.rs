@@ -1,7 +1,7 @@
 pub use Integer::*;
 pub use Primitive::*;
 
-use crate::spec::Target;
+use crate::spec::{AddrSpaceIdx, Target};
 
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
@@ -28,6 +28,7 @@ pub struct TargetDataLayout {
     pub i128_align: AbiAndPrefAlign,
     pub f32_align: AbiAndPrefAlign,
     pub f64_align: AbiAndPrefAlign,
+    pub pointers: Vec<Option<(Size, AbiAndPrefAlign)>>,
     pub pointer_size: Size,
     pub pointer_align: AbiAndPrefAlign,
     pub aggregate_align: AbiAndPrefAlign,
@@ -35,7 +36,8 @@ pub struct TargetDataLayout {
     /// Alignments for vector types.
     pub vector_align: Vec<(Size, AbiAndPrefAlign)>,
 
-    pub instruction_address_space: AddressSpace,
+    pub alloca_address_space: AddrSpaceIdx,
+    pub instruction_address_space: AddrSpaceIdx,
 
     /// Minimum size of #[repr(C)] enums (default I32 bits)
     pub c_enum_min_size: Integer,
@@ -55,6 +57,7 @@ impl Default for TargetDataLayout {
             i128_align: AbiAndPrefAlign { abi: align(32), pref: align(64) },
             f32_align: AbiAndPrefAlign::new(align(32)),
             f64_align: AbiAndPrefAlign::new(align(64)),
+            pointers: vec![],
             pointer_size: Size::from_bits(64),
             pointer_align: AbiAndPrefAlign::new(align(64)),
             aggregate_align: AbiAndPrefAlign { abi: align(0), pref: align(64) },
@@ -62,7 +65,8 @@ impl Default for TargetDataLayout {
                 (Size::from_bits(64), AbiAndPrefAlign::new(align(64))),
                 (Size::from_bits(128), AbiAndPrefAlign::new(align(128))),
             ],
-            instruction_address_space: AddressSpace::DATA,
+            alloca_address_space: Default::default(),
+            instruction_address_space: Default::default(),
             c_enum_min_size: Integer::I32,
         }
     }
@@ -72,7 +76,7 @@ impl TargetDataLayout {
     pub fn parse(target: &Target) -> Result<TargetDataLayout, String> {
         // Parse an address space index from a string.
         let parse_address_space = |s: &str, cause: &str| {
-            s.parse::<u32>().map(AddressSpace).map_err(|err| {
+            s.parse::<u32>().map(AddrSpaceIdx).map_err(|err| {
                 format!("invalid address space `{}` for `{}` in \"data-layout\": {}", s, cause, err)
             })
         };
@@ -102,6 +106,17 @@ impl TargetDataLayout {
             Ok(AbiAndPrefAlign { abi: align_from_bits(abi)?, pref: align_from_bits(pref)? })
         };
 
+        fn resize_and_set<T>(vec: &mut Vec<T>, idx: usize, v: T)
+        where
+            T: Default,
+        {
+            while idx >= vec.len() {
+                vec.push(T::default());
+            }
+
+            vec[idx] = v;
+        }
+
         let mut dl = TargetDataLayout::default();
         let mut i128_align_src = 64;
         for spec in target.data_layout.split('-') {
@@ -110,16 +125,23 @@ impl TargetDataLayout {
             match &*spec_parts {
                 ["e"] => dl.endian = Endian::Little,
                 ["E"] => dl.endian = Endian::Big,
+                [p, s, ref a @ ..] if p.starts_with('p') => {
+                    let idx = if p != &"p" {
+                        parse_address_space(&p[1..], "address space index")?
+                    } else {
+                        Default::default()
+                    };
+                    let size = size(s, p)?;
+                    let align = align(a, p)?;
+                    resize_and_set(&mut dl.pointers, idx.0 as _, Some((size, align)));
+                }
                 [p] if p.starts_with('P') => {
-                    dl.instruction_address_space = parse_address_space(&p[1..], "P")?
+                    let idx = parse_address_space(&p[1..], "instruction address space")?;
+                    dl.instruction_address_space = idx;
                 }
                 ["a", ref a @ ..] => dl.aggregate_align = align(a, "a")?,
                 ["f32", ref a @ ..] => dl.f32_align = align(a, "f32")?,
                 ["f64", ref a @ ..] => dl.f64_align = align(a, "f64")?,
-                [p @ "p", s, ref a @ ..] | [p @ "p0", s, ref a @ ..] => {
-                    dl.pointer_size = size(s, p)?;
-                    dl.pointer_align = align(a, p)?;
-                }
                 [s, ref a @ ..] if s.starts_with('i') => {
                     let bits = match s[1..].parse::<u64>() {
                         Ok(bits) => bits,
@@ -957,17 +979,6 @@ impl FieldsShape {
     }
 }
 
-/// An identifier that specifies the address space that some operation
-/// should operate on. Special address spaces have an effect on code generation,
-/// depending on the target and the address spaces it implements.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct AddressSpace(pub u32);
-
-impl AddressSpace {
-    /// The default address space, corresponding to data space.
-    pub const DATA: Self = AddressSpace(0);
-}
-
 /// Describes how values of the type are passed by target ABIs,
 /// in terms of categories of C types there are ABI rules for.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, HashStable_Generic)]
@@ -1236,7 +1247,7 @@ pub struct PointeeInfo {
     pub size: Size,
     pub align: Align,
     pub safe: Option<PointerKind>,
-    pub address_space: AddressSpace,
+    pub address_space: AddrSpaceIdx,
 }
 
 /// Trait that needs to be implemented by the higher-level type representation

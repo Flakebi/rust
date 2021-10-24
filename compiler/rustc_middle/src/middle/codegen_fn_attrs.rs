@@ -1,7 +1,7 @@
 use crate::mir::mono::Linkage;
 use rustc_attr::{InlineAttr, InstructionSetAttr, OptimizeAttr};
 use rustc_span::symbol::Symbol;
-use rustc_target::spec::SanitizerSet;
+use rustc_target::spec::{AddrSpaceIdx, SanitizerSet};
 
 #[derive(Clone, TyEncodable, TyDecodable, HashStable, Debug)]
 pub struct CodegenFnAttrs {
@@ -41,6 +41,9 @@ pub struct CodegenFnAttrs {
     /// The `#[repr(align(...))]` attribute. Indicates the value of which the function should be
     /// aligned to.
     pub alignment: Option<u32>,
+    /// The `#[addr_space = "..."]` attribute, or what address space this global
+    /// should be place in. The value names are the same as used in target specs.
+    pub addr_space: Option<AddrSpaceIdx>,
 }
 
 bitflags! {
@@ -107,6 +110,7 @@ impl CodegenFnAttrs {
             no_sanitize: SanitizerSet::empty(),
             instruction_set: None,
             alignment: None,
+            addr_space: None,
         }
     }
 

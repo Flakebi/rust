@@ -32,8 +32,7 @@ impl PreDefineMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         };
         let attrs = self.tcx.codegen_fn_attrs(def_id);
 
-        let addr_space = attrs.addr_space
-            .unwrap_or(addr_space);
+        let addr_space = attrs.addr_space.unwrap_or(addr_space);
 
         let g = self.define_global(symbol_name, llty, addr_space).unwrap_or_else(|| {
             self.sess().span_fatal(

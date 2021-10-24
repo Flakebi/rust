@@ -17,7 +17,7 @@ use rustc_middle::ty::layout::{HasParamEnv, TyAndLayout};
 use rustc_middle::ty::Ty;
 use rustc_span::Span;
 use rustc_target::abi::{Abi, Align, Scalar, Size, WrappingRange};
-use rustc_target::spec::HasTargetSpec;
+use rustc_target::spec::{AddrSpaceIdx, HasTargetSpec};
 
 #[derive(Copy, Clone)]
 pub enum OverflowOp {
@@ -202,15 +202,15 @@ pub trait BuilderMethods<'a, 'tcx>:
     fn pointercast(&mut self, val: Self::Value, dest_ty: Self::Type) -> Self::Value;
 
     /// address space casts, then bitcasts to dest_ty without changing address spaces.
-    fn as_ptr_cast(&mut self,
-                   val: Self::Value,
-                   addr_space: AddrSpaceIdx,
-                   dest_ty: Self::Type) -> Self::Value;
-    fn addrspace_cast(&mut self, val: Self::Value,
-                      dest: AddrSpaceIdx) -> Self::Value;
+    fn as_ptr_cast(
+        &mut self,
+        val: Self::Value,
+        addr_space: AddrSpaceIdx,
+        dest_ty: Self::Type,
+    ) -> Self::Value;
+    fn addrspace_cast(&mut self, val: Self::Value, dest: AddrSpaceIdx) -> Self::Value;
     fn flat_addr_cast(&mut self, val: Self::Value) -> Self::Value;
-    fn flat_as_ptr_cast(&mut self, val: Self::Value,
-                        dest_ty: Self::Type) -> Self::Value;
+    fn flat_as_ptr_cast(&mut self, val: Self::Value, dest_ty: Self::Type) -> Self::Value;
 
     fn icmp(&mut self, op: IntPredicate, lhs: Self::Value, rhs: Self::Value) -> Self::Value;
     fn fcmp(&mut self, op: RealPredicate, lhs: Self::Value, rhs: Self::Value) -> Self::Value;

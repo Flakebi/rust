@@ -2422,7 +2422,7 @@ where
         let param_env = cx.param_env();
 
         let addr_space_of_ty = |ty: Ty<'tcx>| {
-            if ty.is_fn() { cx.data_layout().instruction_address_space } else { AddressSpace::DATA }
+            if ty.is_fn() { cx.data_layout().instruction_address_space } else { Default::default() }
         };
 
         let pointee_info = match *this.ty.kind() {

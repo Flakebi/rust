@@ -22,6 +22,7 @@ use rustc_span::{sym, Symbol};
 use rustc_target::abi::call::{ArgAbi, FnAbi, PassMode};
 use rustc_target::abi::{self, HasDataLayout, WrappingRange};
 use rustc_target::spec::abi::Abi;
+use rustc_target::spec::AddrSpaceIdx;
 
 /// Used by `FunctionCx::codegen_terminator` for emitting common patterns
 /// e.g., creating a basic block, calling a function, etc.
@@ -511,7 +512,7 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                     bx,
                     fn_abi,
                     llfn,
-                    &[msg_0, msg.1, location],
+                    &[msg.0, msg.1, location],
                     destination.as_ref().map(|(_, bb)| (ReturnDest::Nothing, *bb)),
                     cleanup,
                 );
@@ -1271,9 +1272,9 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                     // C++ personality function, but `catch (...)` has no type so
                     // it's null. The 64 here is actually a bitfield which
                     // represents that this is a catch-all block.
-                    let null = cp_bx.const_null(
-                        cp_bx.type_i8p_ext(cp_bx.cx().data_layout().instruction_address_space),
-                    );
+                    let null = cp_bx.const_null(cp_bx.type_i8p_as(AddrSpaceIdx(
+                        cp_bx.cx().data_layout().instruction_address_space.0,
+                    )));
                     let sixty_four = cp_bx.const_i32(64);
                     funclet = cp_bx.catch_pad(cs, &[null, sixty_four, null]);
                     cp_bx.br(llbb);

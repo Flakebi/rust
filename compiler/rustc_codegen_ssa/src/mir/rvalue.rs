@@ -16,11 +16,13 @@ use rustc_middle::ty::{self, adjustment::PointerCast, Instance, Ty, TyCtxt};
 use rustc_span::source_map::{Span, DUMMY_SP};
 use rustc_target::abi::{Abi, Int, Variants};
 
-fn codegen_binop_fixup<'a, 'tcx, Bx>(bx: &mut Bx,
-                                     lhs: Bx::Value,
-                                     rhs: Bx::Value)
-    -> (Bx::Value, Bx::Value)
-    where Bx: BuilderMethods<'a, 'tcx>,
+fn codegen_binop_fixup<'a, 'tcx, Bx>(
+    bx: &mut Bx,
+    lhs: Bx::Value,
+    rhs: Bx::Value,
+) -> (Bx::Value, Bx::Value)
+where
+    Bx: BuilderMethods<'a, 'tcx>,
 {
     // In case we're in separate addr spaces.
     // Can happen when cmp against null_mut, eg.
@@ -40,12 +42,7 @@ fn codegen_binop_fixup<'a, 'tcx, Bx>(bx: &mut Bx,
     if let Some(lhs_as) = bx.cx().type_addr_space(lhs_ty) {
         let rhs_as = bx.cx().type_addr_space(rhs_ty).unwrap();
         // cast to the flat addr space if they are still different.
-        if lhs_as != rhs_as {
-            (bx.flat_addr_cast(lhs),
-             bx.flat_addr_cast(rhs))
-        } else {
-            (lhs, rhs)
-        }
+        if lhs_as != rhs_as { (bx.flat_addr_cast(lhs), bx.flat_addr_cast(rhs)) } else { (lhs, rhs) }
     } else {
         (lhs, rhs)
     }
