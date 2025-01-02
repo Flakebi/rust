@@ -84,6 +84,8 @@ codegen_ssa_incorrect_cgu_reuse_type =
 
 codegen_ssa_insufficient_vs_code_product = VS Code is a different product, and is not sufficient.
 
+codegen_ssa_cpu_required = target requires to explicitly specify a cpu with `-C target-cpu`
+
 codegen_ssa_invalid_link_ordinal_nargs = incorrect number of arguments to `#[link_ordinal]`
     .note = the attribute requires exactly one argument
 

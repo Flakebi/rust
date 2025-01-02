@@ -19,6 +19,13 @@ pub(crate) fn target() -> Target {
             linker_flavor: LinkerFlavor::Gnu(Cc::No, Lld::Yes),
             linker: Some("rust-lld".into()),
 
+            // There are many CPUs, one for each hardware generation.
+            // Overwrite with -Ctarget-cpu=gfx...
+            // From the list here: https://llvm.org/docs/AMDGPUUsage.html#processors
+            // Or from
+            // rustc --target amdgcn-amd-amdhsa --print target-cpus
+            need_explicit_cpu: true,
+
             max_atomic_width: Some(64),
 
             // Unwinding on GPUs is not useful.
