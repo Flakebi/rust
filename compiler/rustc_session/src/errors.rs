@@ -75,6 +75,10 @@ pub(crate) struct CliFeatureDiagnosticHelp {
 }
 
 #[derive(Diagnostic)]
+#[diag(session_cpu_required)]
+pub(crate) struct CpuRequired;
+
+#[derive(Diagnostic)]
 #[diag(session_not_circumvent_feature)]
 pub(crate) struct NotCircumventFeature;
 

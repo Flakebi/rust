@@ -1328,6 +1328,10 @@ fn validate_commandline_args_with_session_available(sess: &Session) {
             sess.dcx().emit_warn(errors::SoftFloatIgnored);
         }
     }
+
+    if sess.opts.cg.target_cpu.is_none() && sess.target.need_explicit_cpu {
+        sess.dcx().emit_fatal(errors::CpuRequired);
+    }
 }
 
 /// Holds data on the current incremental compilation session, if there is one.
