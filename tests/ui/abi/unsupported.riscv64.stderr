@@ -129,7 +129,7 @@ LL | extern "C-cmse-nonsecure-entry" {}
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0570]: `"ptx-kernel"` is not a supported ABI for the current target
-  --> $DIR/unsupported.rs:36:1
+  --> $DIR/unsupported.rs:34:1
    |
 LL | extern "ptx-kernel" fn ptx() {}
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -138,7 +138,7 @@ error[E0570]: `"amdgpu-kernel"` is not a supported ABI for the current target
   --> $DIR/unsupported.rs:43:1
    |
 LL | extern "amdgpu-kernel" fn amdgpu() {}
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0570]: `"aapcs"` is not a supported ABI for the current target
   --> $DIR/unsupported.rs:46:1
