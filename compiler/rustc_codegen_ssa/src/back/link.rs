@@ -2498,8 +2498,10 @@ fn add_order_independent_options(
         // as it appears to be unused. This can then cause the PGO profile file to lose
         // some functions. If we are generating a profile we shouldn't strip those metadata
         // sections to ensure we have all the data for PGO.
-        let keep_metadata =
-            crate_type == CrateType::Dylib || sess.opts.cg.profile_generate.enabled();
+        let keep_metadata = crate_type == CrateType::Dylib
+            || sess.opts.cg.profile_generate.enabled()
+            // TODO Needed to get the <kernel>.kd symbol?
+            || (sess.target.arch == "amdgpu" && sess.opts.cg.linker_plugin_lto.enabled());
         if crate_type != CrateType::Executable || !sess.opts.unstable_opts.export_executable_symbols
         {
             cmd.gc_sections(keep_metadata);

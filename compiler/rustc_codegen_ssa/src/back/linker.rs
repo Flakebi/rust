@@ -839,7 +839,15 @@ impl<'a> Linker for GccLinker<'a> {
         } else {
             let mut arg = OsString::from("--version-script=");
             arg.push(path);
-            self.link_arg(arg).link_arg("--no-undefined-version");
+            self.link_arg(arg);
+            if self.sess.target.arch == "amdgpu" && self.sess.opts.cg.linker_plugin_lto.enabled() {
+                // The .kd symbol needs to be visible.
+                // Workaround because we cannot export a symbol that does not exist before linking.
+                // At the same time, if we do not specify the .kd symbol, it will not be exported.
+                self.link_arg("--undefined-version");
+            } else {
+                self.link_arg("--no-undefined-version");
+            }
         }
     }
 
