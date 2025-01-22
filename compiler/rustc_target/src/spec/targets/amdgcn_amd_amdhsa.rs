@@ -19,6 +19,10 @@ pub(crate) fn target() -> Target {
             linker_flavor: LinkerFlavor::Gnu(Cc::No, Lld::Yes),
             linker: Some("rust-lld".into()),
 
+            // There are many CPUs, one for each hardware generation.
+            // Require to set one explicitly as there is no good default.
+            need_explicit_cpu: true,
+
             max_atomic_width: Some(64),
 
             // Unwinding on GPUs is not useful.
