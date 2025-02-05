@@ -25,7 +25,10 @@
 macro_rules! impl_marker_trait {
     ($Trait:ident => [$( $ty:ident ),* $(,)?] ) => {
         $( impl $Trait for $ty {} )*
-    }
+    };
+    (unsafe $Trait:ident => [$( $ty:ident ),* $(,)?] ) => {
+        $( unsafe impl $Trait for $ty {} )*
+    };
 }
 
 #[lang = "sized"]
@@ -56,6 +59,17 @@ impl<T: Copy, const N: usize> Copy for [T; N] {}
 pub struct PhantomData<T: ?Sized>;
 impl<T: ?Sized> Copy for PhantomData<T> {}
 
+#[lang = "sync"]
+pub unsafe trait Sync {}
+impl_marker_trait!(
+    unsafe Sync => [
+        bool, char,
+        isize, i8, i16, i32, i64, i128,
+        usize, u8, u16, u32, u64, u128,
+        f16, f32, f64, f128,
+    ]
+);
+
 pub enum Option<T> {
     None,
     Some(T),
@@ -74,6 +88,9 @@ pub struct ManuallyDrop<T: ?Sized> {
     value: T,
 }
 impl<T: Copy + ?Sized> Copy for ManuallyDrop<T> {}
+
+#[lang = "drop_in_place"]
+pub unsafe fn drop_in_place<T: ?Sized>(_: *mut T) {}
 
 #[lang = "unsafe_cell"]
 #[repr(transparent)]
