@@ -3,7 +3,7 @@
 //@ needs-llvm-components: amdgpu
 //@ needs-rust-lld
 
-use run_make_support::{cmd, dynamic_lib_name, llvm_readobj, run_in_tmpdir, rustc};
+use run_make_support::{llvm_readobj, rustc};
 
 fn main() {
     rustc()
