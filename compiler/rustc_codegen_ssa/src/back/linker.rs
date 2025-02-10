@@ -839,7 +839,20 @@ impl<'a> Linker for GccLinker<'a> {
         } else {
             let mut arg = OsString::from("--version-script=");
             arg.push(path);
-            self.link_arg(arg).link_arg("--no-undefined-version");
+            self.link_arg(arg);
+
+            if self.sess.target.os == "amdhsa" && self.sess.opts.cg.linker_plugin_lto.enabled() {
+                // If we are compiling for amdhsa, kernel functions generate a symbol
+                // <function name>.kd in the LLVM backend, which needs to be visible in the output.
+                // But if we give bitcode to the linker, the symbol is not yet defined and the
+                // linker complains about an undefined symbol in the version script.
+                // At the same time, if we do not specify the <function name>.kd symbol in the
+                // version script, it will not be exported.
+                // Workaround by allowing the version script do contain undefined symbols.
+                self.link_arg("--undefined-version");
+            } else {
+                self.link_arg("--no-undefined-version");
+            }
         }
     }
 

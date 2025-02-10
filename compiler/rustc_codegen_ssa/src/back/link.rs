@@ -2549,8 +2549,14 @@ fn add_order_independent_options(
         // as it appears to be unused. This can then cause the PGO profile file to lose
         // some functions. If we are generating a profile we shouldn't strip those metadata
         // sections to ensure we have all the data for PGO.
-        let keep_metadata =
-            crate_type == CrateType::Dylib || sess.opts.cg.profile_generate.enabled();
+        let dylib_pgo = crate_type == CrateType::Dylib || sess.opts.cg.profile_generate.enabled();
+        // When compiling for amdhsa, every kernel function generates a <function name>.kd symbol.
+        // This symbol gets removed again when using linker-plugin-lto. Disable gc_sections to keep
+        // the symbol.
+        let amdhsa_linker_lto =
+            sess.target.os == "amdhsa" && sess.opts.cg.linker_plugin_lto.enabled();
+
+        let keep_metadata = dylib_pgo || amdhsa_linker_lto;
         if crate_type != CrateType::Executable || !sess.opts.unstable_opts.export_executable_symbols
         {
             cmd.gc_sections(keep_metadata);
