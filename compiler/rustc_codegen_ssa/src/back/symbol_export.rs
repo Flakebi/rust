@@ -617,6 +617,7 @@ fn calling_convention_for_symbol<'tcx>(
             .unwrap_or_else(|_| bug!("fn_abi_of_instance({i:?}) failed"))
         })
         .map(|fnabi| (fnabi.conv, &fnabi.args[..]))
+        // FIXME(workingjubilee): why don't we know the convention here?
         .unwrap_or((Conv::Rust, &[]))
 }
 

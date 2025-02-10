@@ -1,5 +1,6 @@
 // Checks that the produced object has the .kd symbol exported.
 
+//@ needs-llvm-components: amdgpu
 //@ needs-rust-lld
 
 use run_make_support::{cmd, dynamic_lib_name, llvm_readobj, run_in_tmpdir, rustc};
