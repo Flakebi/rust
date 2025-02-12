@@ -2552,7 +2552,7 @@ fn add_order_independent_options(
         let dylib_pgo = crate_type == CrateType::Dylib || sess.opts.cg.profile_generate.enabled();
         // When compiling for amdhsa, every kernel function generates a <function name>.kd symbol.
         // This symbol gets removed again when using linker-plugin-lto. Disable gc_sections to keep
-        // the symbol.
+        // the symbol (see llvm/llvm-project#119479).
         let amdhsa_linker_lto =
             sess.target.os == "amdhsa" && sess.opts.cg.linker_plugin_lto.enabled();
 
