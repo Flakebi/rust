@@ -6,19 +6,15 @@
 //@ needs-llvm-components: amdgpu
 //@ needs-rust-lld
 
-#![feature(path_file_prefix)]
-
 use run_make_support::{dynamic_lib_name, llvm_readobj, rustc, static_lib_name};
 
 fn main() {
     rustc()
         .input("lib.rs")
-        .output(static_lib_name("lib"))
         .args(&["-Clinker-plugin-lto", "--target=amdgcn-amd-amdhsa", "-Ctarget-cpu=gfx900"])
         .run();
     rustc()
         .input("main.rs")
-        .output("main.elf")
         .opt_level("3")
         .args(&[
             "-Clinker-plugin-lto",
