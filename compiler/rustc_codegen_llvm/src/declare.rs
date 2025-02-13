@@ -12,6 +12,7 @@
 //! * When in doubt, define.
 
 use itertools::Itertools;
+use rustc_abi::AddressSpace;
 use rustc_codegen_ssa::traits::TypeMembershipCodegenMethods;
 use rustc_data_structures::fx::FxIndexSet;
 use rustc_middle::ty::{Instance, Ty};
@@ -88,6 +89,28 @@ impl<'ll, 'tcx> CodegenCx<'ll, 'tcx> {
     pub(crate) fn declare_global(&self, name: &str, ty: &'ll Type) -> &'ll Value {
         debug!("declare_global(name={:?})", name);
         unsafe { llvm::LLVMRustGetOrInsertGlobal(self.llmod, name.as_c_char_ptr(), name.len(), ty) }
+    }
+
+    /// Declare a global value in a specific address space.
+    ///
+    /// If there’s a value with the same name already declared, the function will
+    /// return its Value instead.
+    pub(crate) fn declare_global_in_addrspace(
+        &self,
+        name: &str,
+        ty: &'ll Type,
+        addr_space: AddressSpace,
+    ) -> &'ll Value {
+        debug!("declare_global(name={name:?}, addrspace={addr_space:?})");
+        unsafe {
+            llvm::LLVMRustGetOrInsertGlobalInAddrspace(
+                self.llmod,
+                name.as_c_char_ptr(),
+                name.len(),
+                ty,
+                addr_space.0,
+            )
+        }
     }
 
     /// Declare a C ABI function.

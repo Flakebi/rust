@@ -1777,6 +1777,13 @@ unsafe extern "C" {
         NameLen: size_t,
         T: &'a Type,
     ) -> &'a Value;
+    pub fn LLVMRustGetOrInsertGlobalInAddrspace<'a>(
+        M: &'a Module,
+        Name: *const c_char,
+        NameLen: size_t,
+        T: &'a Type,
+        AddressSpace: c_uint,
+    ) -> &'a Value;
     pub fn LLVMRustInsertPrivateGlobal<'a>(M: &'a Module, T: &'a Type) -> &'a Value;
     pub fn LLVMRustGetNamedValue(
         M: &Module,
