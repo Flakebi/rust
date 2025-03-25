@@ -28,7 +28,15 @@ static C_NEVER_INLINED_PATTERN: &'static str = "bl.*<c_never_inlined>";
 static C_NEVER_INLINED_PATTERN: &'static str = "call.*c_never_inlined";
 
 fn main() {
+    test_lto("thin");
+    test_lto("fat");
+}
+
+fn test_lto(lto: &str) {
+    let clang_lto = if lto == "fat" { "full" } else { lto };
+
     rustc()
+        .lto(lto)
         .linker_plugin_lto("on")
         .output(static_lib_name("rustlib-xlto"))
         .opt_level("2")
@@ -36,7 +44,7 @@ fn main() {
         .input("rustlib.rs")
         .run();
     clang()
-        .lto("thin")
+        .lto(clang_lto)
         .use_ld("lld")
         .arg("-lrustlib-xlto")
         .out_exe("cmain")
@@ -57,9 +65,10 @@ fn main() {
         .input("cmain")
         .run()
         .assert_stdout_contains_regex(RUST_NEVER_INLINED_PATTERN);
-    clang().input("clib.c").lto("thin").arg("-c").out_exe("clib.o").arg("-O2").run();
+    clang().input("clib.c").lto(clang_lto).arg("-c").out_exe("clib.o").arg("-O2").run();
     llvm_ar().obj_to_ar().output_input(static_lib_name("xyz"), "clib.o").run();
     rustc()
+        .lto(lto)
         .linker_plugin_lto("on")
         .opt_level("2")
         .linker(&env_var("CLANG"))
@@ -72,9 +81,12 @@ fn main() {
         .input("rsmain")
         .run()
         .assert_stdout_not_contains_regex(C_ALWAYS_INLINED_PATTERN);
-    llvm_objdump()
-        .disassemble()
-        .input("rsmain")
-        .run()
-        .assert_stdout_contains_regex(C_NEVER_INLINED_PATTERN);
+
+    let dump = llvm_objdump().disassemble().input("rsmain").run();
+    if lto == "thin" {
+        dump.assert_stdout_contains_regex(C_NEVER_INLINED_PATTERN);
+    } else {
+        // fat lto inlines this anyway
+        dump.assert_stdout_not_contains_regex(C_NEVER_INLINED_PATTERN);
+    }
 }

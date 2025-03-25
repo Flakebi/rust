@@ -13,7 +13,10 @@ fn main() {
     rustc()
         .input("main.rs")
         .opt_level("3")
-        .args(&["-Clto=fat", "-Clinker-plugin-lto", "-Zlinker-features=+lld", "-Clink-arg=ir.bc"])
+        .lto("fat")
+        .linker_plugin_lto("on")
+        .link_arg("ir.bc")
+        .arg("-Zlinker-features=+lld")
         .run();
 
     llvm_objdump()
