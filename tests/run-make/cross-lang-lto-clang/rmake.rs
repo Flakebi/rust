@@ -28,12 +28,13 @@ static C_NEVER_INLINED_PATTERN: &'static str = "bl.*<c_never_inlined>";
 static C_NEVER_INLINED_PATTERN: &'static str = "call.*c_never_inlined";
 
 fn main() {
-    test_lto("thin");
-    test_lto("fat");
+    test_lto(false);
+    test_lto(true);
 }
 
-fn test_lto(lto: &str) {
-    let clang_lto = if lto == "fat" { "full" } else { lto };
+fn test_lto(fat_lto: bool) {
+    let lto = if fat_lto { "fat" } else { "thin" };
+    let clang_lto = if fat_lto { "full" } else { "thin" };
 
     rustc()
         .lto(lto)
