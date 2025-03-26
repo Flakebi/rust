@@ -782,8 +782,23 @@ pub(crate) unsafe fn codegen(
             let _timer = cgcx
                 .prof
                 .generic_activity_with_arg("LLVM_module_codegen_make_bitcode", &*module.name);
-            let thin = ThinBuffer::new(llmod, config.emit_thin_lto, config.emit_thin_lto_summary);
-            let data = thin.data();
+            let data;
+            let thin;
+            let buf;
+            if cgcx.lto == Lto::Thin || cgcx.lto == Lto::ThinLocal || config.emit_thin_lto_summary {
+                thin = Some(ThinBuffer::new(
+                    llmod,
+                    config.emit_thin_lto,
+                    config.emit_thin_lto_summary,
+                ));
+                data = thin.as_ref().unwrap().data();
+            } else {
+                // For full lto or if no summary was requested, just write the bitcode.
+                let raw_buf = unsafe { llvm::LLVMWriteBitcodeToMemoryBuffer(llmod) };
+                buf = llvm::MemoryBuffer::new(raw_buf);
+                data = buf.as_slice();
+                thin = None;
+            }
 
             if let Some(bitcode_filename) = bc_out.file_name() {
                 cgcx.prof.artifact_size(
@@ -796,7 +811,10 @@ pub(crate) unsafe fn codegen(
             if config.emit_thin_lto_summary
                 && let Some(thin_link_bitcode_filename) = bc_summary_out.file_name()
             {
-                let summary_data = thin.thin_link_data();
+                let summary_data = thin
+                    .as_ref()
+                    .expect("Bug! Should have created a ThinLTO buffer before")
+                    .thin_link_data();
                 cgcx.prof.artifact_size(
                     "llvm_bitcode_summary",
                     thin_link_bitcode_filename.to_string_lossy(),

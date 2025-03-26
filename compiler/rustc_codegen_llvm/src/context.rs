@@ -292,7 +292,7 @@ pub(crate) unsafe fn create_module<'ll>(
 
     // If fat lto is requested, lld still defaults to thin lto. Set ThinLTO=0 to force fat lto in lld.
     if sess.lto() == config::Lto::Fat {
-        llvm::add_module_flag_u32(llmod, llvm::ModuleFlagMergeBehavior::Override, "ThinLTO", 0);
+        // llvm::add_module_flag_u32(llmod, llvm::ModuleFlagMergeBehavior::Override, "ThinLTO", 0);
     }
 
     // Add "kcfi" module flag if KCFI is enabled. (See https://reviews.llvm.org/D119296.)

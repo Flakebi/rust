@@ -748,6 +748,8 @@ unsafe extern "C" {
 #[repr(C)]
 pub struct Builder<'a>(InvariantOpaque<'a>);
 #[repr(C)]
+pub struct MemoryBufferRef<'a>(InvariantOpaque<'a>);
+#[repr(C)]
 pub struct PassManager<'a>(InvariantOpaque<'a>);
 unsafe extern "C" {
     pub type TargetMachine;
@@ -1624,6 +1626,18 @@ unsafe extern "C" {
 
     /// Writes a module to the specified path. Returns 0 on success.
     pub fn LLVMWriteBitcodeToFile(M: &Module, Path: *const c_char) -> c_int;
+
+    /// Converts a module to bitcode.
+    pub fn LLVMWriteBitcodeToMemoryBuffer<'a>(M: &Module) -> &mut MemoryBufferRef<'a>;
+
+    /// Returns the start memory address of a buffer.
+    pub fn LLVMGetBufferStart<'a>(MemBuf: &MemoryBufferRef<'a>) -> *const u8;
+
+    /// Returns the length of a buffer.
+    pub fn LLVMGetBufferSize<'a>(MemBuf: &MemoryBufferRef<'a>) -> size_t;
+
+    /// Frees the memory buffer.
+    pub fn LLVMDisposeMemoryBuffer<'a>(MemBuf: &mut MemoryBufferRef<'a>);
 
     /// Creates a legacy pass manager -- only used for final codegen.
     pub fn LLVMCreatePassManager<'a>() -> &'a mut PassManager<'a>;

@@ -363,6 +363,36 @@ impl<'a> Deref for OperandBundleOwned<'a> {
     }
 }
 
+pub(crate) struct MemoryBuffer<'a> {
+    raw: &'a mut MemoryBufferRef<'a>,
+}
+
+impl<'a> MemoryBuffer<'a> {
+    pub(crate) fn new(raw: &'a mut MemoryBufferRef<'a>) -> Self {
+        Self { raw }
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        unsafe { LLVMGetBufferSize(self.raw) }
+    }
+
+    pub(crate) fn as_ptr(&self) -> *const u8 {
+        unsafe { LLVMGetBufferStart(self.raw) }
+    }
+
+    pub(crate) fn as_slice(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self.as_ptr(), self.len()) }
+    }
+}
+
+impl Drop for MemoryBuffer<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            LLVMDisposeMemoryBuffer(self.raw);
+        }
+    }
+}
+
 pub(crate) fn add_module_flag_u32(
     module: &Module,
     merge_behavior: ModuleFlagMergeBehavior,
